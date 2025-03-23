@@ -1,0 +1,352 @@
+{% extends "layout.html" %}
+
+{% block title %}QA Checks Tool Demo | Jackson Franco{% endblock %}
+
+{% block head %}
+<!-- Chart.js for data visualization -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="qa-demo-header py-5 bg-success text-white">
+    <div class="container">
+        <h1 class="display-4 text-center mb-3">Daily Quality Assurance Checks</h1>
+        <p class="lead text-center">An automated tool for monitoring performance metrics and identifying anomalies</p>
+    </div>
+</div>
+
+<section class="qa-explanation py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="card-title h4">About This Project</h2>
+                        <p>The Daily Quality Assurance Checks tool is an automated system designed to monitor key performance metrics across different regions or departments. It helps identify potential issues before they escalate.</p>
+                        <p>The tool analyzes 30 days of historical data, performs regression analysis, and flags any metrics that fall significantly below expected values. When anomalies are detected, it automatically drafts emails to relevant managers for follow-up.</p>
+                        <p>For this demo, select a region to see how the tool analyzes performance data and identifies anomalies.</p>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h3 class="card-title h5">How It Works</h3>
+                        <ol>
+                            <li>The system collects daily performance metrics from various regions/departments.</li>
+                            <li>It calculates a baseline using regression analysis on 30 days of historical data.</li>
+                            <li>Recent values (last 7 days) are compared against the baseline.</li>
+                            <li>Metrics that fall significantly below expected values are flagged.</li>
+                            <li>The system automatically drafts emails to department managers for investigation.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h3 class="h5 mb-0">Try the Demo</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="analysis-form" class="mb-4">
+                            <div class="mb-3">
+                                <label for="region-select" class="form-label">Select a region to analyze:</label>
+                                <select class="form-select" id="region-select">
+                                    <option value="">-- Select a region --</option>
+                                    {% for region in regions %}
+                                    <option value="{{ region }}">{{ region }} Region</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success" id="analyze-button">Run Analysis</button>
+                        </form>
+                        
+                        <div id="results-container" class="d-none">
+                            <div class="d-flex justify-content-center mb-4" id="loading-indicator">
+                                <div class="spinner-border text-success" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span class="ms-2">Running analysis...</span>
+                            </div>
+                            
+                            <div id="analysis-results" class="d-none">
+                                <h4>Analysis Results: <span id="region-name"></span> Region</h4>
+                                <div class="alert alert-info" id="no-issues-alert">
+                                    No issues detected in the selected region.
+                                </div>
+                                
+                                <div id="issues-container" class="d-none">
+                                    <div class="alert alert-warning mb-4">
+                                        <h5 class="alert-heading">Issues Detected!</h5>
+                                        <p>The following metrics require attention:</p>
+                                        <div id="issues-list"></div>
+                                    </div>
+                                    
+                                    <div class="card mb-4">
+                                        <div class="card-header bg-light">
+                                            <h5 class="card-title mb-0">Auto-Generated Email</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="email-preview">
+                                                <p><strong>To:</strong> <span id="manager-email"></span></p>
+                                                <p><strong>Subject:</strong> Urgent: Quality Assurance Alert for <span id="email-region"></span> Region</p>
+                                                <hr>
+                                                <p>Dear <span id="manager-name"></span>,</p>
+                                                <p>Our Daily Quality Assurance system has identified potential issues in the <span id="email-region-2"></span> Region that require your attention.</p>
+                                                <div id="email-details"></div>
+                                                <p>Please investigate these anomalies and respond with your findings at your earliest convenience.</p>
+                                                <p>Thank you,<br>Quality Assurance Team</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <h5 class="mt-4 mb-3">Performance Metrics (Last 30 Days)</h5>
+                                <div id="charts-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const regionSelect = document.getElementById('region-select');
+    const analysisForm = document.getElementById('analysis-form');
+    const analyzeButton = document.getElementById('analyze-button');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const resultsContainer = document.getElementById('results-container');
+    const analysisResults = document.getElementById('analysis-results');
+    const noIssuesAlert = document.getElementById('no-issues-alert');
+    const issuesContainer = document.getElementById('issues-container');
+    const issuesList = document.getElementById('issues-list');
+    const chartsContainer = document.getElementById('charts-container');
+    
+    // Email preview elements
+    const managerEmail = document.getElementById('manager-email');
+    const managerName = document.getElementById('manager-name');
+    const emailRegion = document.getElementById('email-region');
+    const emailRegion2 = document.getElementById('email-region-2');
+    const emailDetails = document.getElementById('email-details');
+    const regionName = document.getElementById('region-name');
+    
+    // Charts array to keep track of created charts
+    let charts = [];
+    
+    // Handle form submission
+    analysisForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const region = regionSelect.value;
+        if (!region) {
+            alert('Please select a region to analyze.');
+            return;
+        }
+        
+        // Clear previous results
+        clearPreviousResults();
+        
+        // Show loading indicator
+        loadingIndicator.classList.remove('d-none');
+        resultsContainer.classList.remove('d-none');
+        analysisResults.classList.add('d-none');
+        analyzeButton.disabled = true;
+        
+        // Make API request
+        fetch('/api/qa-analysis', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ region: region })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Hide loading indicator
+            loadingIndicator.classList.add('d-none');
+            analysisResults.classList.remove('d-none');
+            analyzeButton.disabled = false;
+            
+            if (data.success) {
+                displayAnalysisResults(data.analysis);
+            } else {
+                showError(data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            loadingIndicator.classList.add('d-none');
+            analyzeButton.disabled = false;
+            showError('An error occurred while processing your request.');
+        });
+    });
+    
+    function clearPreviousResults() {
+        // Clear charts
+        charts.forEach(chart => chart.destroy());
+        charts = [];
+        chartsContainer.innerHTML = '';
+        
+        // Clear issues list
+        issuesList.innerHTML = '';
+        emailDetails.innerHTML = '';
+        
+        // Reset visibility of alerts
+        noIssuesAlert.classList.add('d-none');
+        issuesContainer.classList.add('d-none');
+    }
+    
+    function displayAnalysisResults(analysis) {
+        regionName.textContent = analysis.region;
+        
+        // Check if there are any anomalies
+        let hasAnomalies = false;
+        const anomalyDetails = [];
+        
+        analysis.metrics.forEach((metric, index) => {
+            // Create chart for this metric
+            const chartDiv = document.createElement('div');
+            chartDiv.className = 'mb-4';
+            chartsContainer.appendChild(chartDiv);
+            
+            const canvas = document.createElement('canvas');
+            canvas.id = `chart-${index}`;
+            chartDiv.appendChild(canvas);
+            
+            createChart(canvas, metric);
+            
+            // Check for anomalies
+            if (metric.anomalies && metric.anomalies.length > 0) {
+                hasAnomalies = true;
+                
+                // Add to issues list
+                const issueItem = document.createElement('div');
+                issueItem.className = 'mb-2';
+                issueItem.innerHTML = `<strong>${metric.name}:</strong> Detected ${metric.anomalies.length} anomalies in the last 7 days.`;
+                issuesList.appendChild(issueItem);
+                
+                // Add details for email
+                anomalyDetails.push(`<p><strong>${metric.name}</strong>: Recent values are significantly below the 30-day average:</p>`);
+                
+                let anomalyList = '<ul>';
+                metric.anomalies.forEach(anomaly => {
+                    anomalyList += `<li>Day ${anomaly.day}: ${anomaly.value} (${anomaly.percent_diff.toFixed(1)}% below average)</li>`;
+                });
+                anomalyList += '</ul>';
+                
+                anomalyDetails.push(anomalyList);
+                anomalyDetails.push('<p>Please confirm if these numbers are accurate or if there was a data entry issue.</p>');
+            }
+        });
+        
+        // Show appropriate alerts
+        if (hasAnomalies) {
+            noIssuesAlert.classList.add('d-none');
+            issuesContainer.classList.remove('d-none');
+            
+            // Fill in email details
+            managerName.textContent = analysis.manager;
+            managerEmail.textContent = analysis.email;
+            emailRegion.textContent = analysis.region;
+            emailRegion2.textContent = analysis.region;
+            emailDetails.innerHTML = anomalyDetails.join('');
+        } else {
+            noIssuesAlert.classList.remove('d-none');
+            issuesContainer.classList.add('d-none');
+        }
+    }
+    
+    function createChart(canvas, metric) {
+        const ctx = canvas.getContext('2d');
+        
+        // Prepare data for chart
+        const labels = Array.from({length: 30}, (_, i) => `Day ${i+1}`);
+        const data = metric.all_values;
+        
+        // Calculate average line data
+        const avgValue = metric.average;
+        const avgData = Array(30).fill(avgValue);
+        
+        // Create dataset for anomalies
+        const anomalyIndices = metric.anomalies.map(a => a.day - 1);
+        const anomalyData = data.map((val, idx) => anomalyIndices.includes(idx) ? val : null);
+        
+        // Create the chart
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: metric.name,
+                        data: data,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        tension: 0.1,
+                        fill: false
+                    },
+                    {
+                        label: '30-Day Average',
+                        data: avgData,
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                        borderDash: [5, 5],
+                        fill: false
+                    },
+                    {
+                        label: 'Anomalies',
+                        data: anomalyData,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 1)',
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        showLine: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: metric.name
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const datasetLabel = context.dataset.label;
+                                
+                                if (datasetLabel === 'Anomalies' && value !== null) {
+                                    const anomaly = metric.anomalies.find(a => a.day - 1 === context.dataIndex);
+                                    if (anomaly) {
+                                        return `${datasetLabel}: ${value} (${anomaly.percent_diff.toFixed(1)}% below average)`;
+                                    }
+                                }
+                                
+                                return `${datasetLabel}: ${value}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+        
+        charts.push(chart);
+    }
+    
+    function showError(message) {
+        chartsContainer.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+        analysisResults.classList.remove('d-none');
+    }
+});
+</script>
+{% endblock %} 

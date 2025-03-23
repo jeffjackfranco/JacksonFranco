@@ -1,0 +1,300 @@
+/* Global styles */
+body {
+    font-family: 'Roboto', sans-serif;
+    color: #333;
+}
+
+.content-wrapper {
+    padding-top: 56px; /* Height of the navbar */
+    min-height: calc(100vh - 250px); /* Ensures content takes at least full height minus footer */
+}
+
+/* Hero section */
+.hero-section {
+    height: 100vh;
+    min-height: 500px;
+    background: linear-gradient(135deg, #2C3E50, #4CA1AF);
+    color: white;
+    display: flex;
+    align-items: center;
+}
+
+/* Skills card */
+.skills-card {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border: none;
+    border-radius: 8px;
+    height: 100%;
+}
+
+.badge {
+    font-weight: normal;
+    letter-spacing: 0.5px;
+}
+
+/* Project cards */
+.project-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.project-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Projects header */
+.projects-header {
+    padding-top: 100px;
+    padding-bottom: 30px;
+}
+
+/* CTA section */
+.cta-section {
+    background: linear-gradient(135deg, #2C3E50, #4CA1AF);
+    padding: 80px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.cta-section::before {
+    content: "";
+    position: absolute;
+    top: -100%;
+    left: -100%;
+    width: 300%;
+    height: 300%;
+    background: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+    animation: moveBackground 60s linear infinite;
+    z-index: 1;
+}
+
+.cta-section .container {
+    position: relative;
+    z-index: 2;
+}
+
+/* FAISS Demo page */
+.faiss-demo-header {
+    padding-top: 100px;
+    padding-bottom: 50px;
+}
+
+/* QA Checks Demo page */
+.qa-demo-header {
+    padding-top: 100px;
+    padding-bottom: 50px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.email-preview {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.email-header {
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.email-subject {
+    font-weight: bold;
+    color: #343a40;
+}
+
+.email-body {
+    white-space: pre-line;
+}
+
+/* Stock Trading Bot Demo Styles */
+.stock-bot-header {
+    background: linear-gradient(135deg, #2c3e50, #1abc9c);
+    padding: 60px 0;
+    margin-bottom: 30px;
+}
+
+.stock-bot-explanation {
+    background-color: #f8f9fa;
+    padding: 40px 0;
+}
+
+.confidence-bar {
+    height: 8px;
+    border-radius: 4px;
+    background-color: #e9ecef;
+}
+
+.confidence-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+}
+
+.factor-tag {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    margin: 0.25rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    background-color: rgba(108, 117, 125, 0.1);
+}
+
+.animation-container {
+    position: relative;
+    height: 400px;
+    margin-bottom: 2rem;
+}
+
+.highlight-circle {
+    position: absolute;
+    border: 3px dashed;
+    border-radius: 50%;
+    opacity: 0;
+    z-index: 100;
+    transform: scale(0.5);
+    transition: all 0.5s ease-in-out;
+}
+
+.highlight-circle.visible {
+    opacity: 0.7;
+    transform: scale(1);
+}
+
+.stock-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stock-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Thesis Demo Page Styles */
+.thesis-header {
+    background: linear-gradient(135deg, #4b6cb7, #182848);
+    padding: 60px 0;
+    margin-bottom: 30px;
+}
+
+.card-statement {
+    border-left: 4px solid #4b6cb7;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-statement:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.statement-actions .btn {
+    border-radius: 20px;
+}
+
+.argument-card {
+    border-radius: 8px;
+    margin-bottom: 15px;
+    transition: transform 0.2s ease;
+}
+
+.argument-card:hover {
+    transform: translateY(-3px);
+}
+
+.argument-agree {
+    border-left: 4px solid #28a745;
+}
+
+.argument-disagree {
+    border-left: 4px solid #dc3545;
+}
+
+.similarity-score {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 0.8rem;
+}
+
+.user-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+}
+
+.debate-response {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    border-left: 4px solid #6c757d;
+}
+
+.auth-form {
+    max-width: 400px;
+}
+
+/* Footer */
+footer {
+    margin-top: auto;
+    background-color: #343a40;
+    color: white;
+}
+
+.social-links a {
+    transition: transform 0.3s ease;
+}
+
+.social-links a:hover {
+    transform: translateY(-3px);
+}
+
+/* Media queries */
+@media (max-width: 768px) {
+    .hero-section {
+        min-height: 400px;
+    }
+    
+    .hero-section h1 {
+        font-size: 2.5rem;
+    }
+    
+    .hero-section p.lead {
+        font-size: 1.2rem;
+    }
+    
+    .content-wrapper {
+        padding-top: 56px;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 50px 0;
+    }
+    
+    .hero-section h1 {
+        font-size: 2.5rem;
+    }
+    
+    .qa-form, .qa-results, .email-preview {
+        padding: 15px;
+    }
+    
+    .animation-container {
+        height: 300px;
+    }
+} 

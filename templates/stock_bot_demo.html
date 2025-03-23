@@ -1,0 +1,513 @@
+{% extends "layout.html" %}
+
+{% block title %}Stock Trading Bot | Jackson Franco{% endblock %}
+
+{% block head %}
+<!-- Chart.js for data visualization -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Additional plugin for annotations (to circle the algorithms) -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.0.2"></script>
+<!-- Include Chart.js plugin for animations -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<style>
+    .stock-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .stock-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    .confidence-bar {
+        height: 8px;
+        border-radius: 4px;
+        background-color: #e9ecef;
+    }
+    .confidence-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+    }
+    .factor-tag {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        margin: 0.25rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        background-color: rgba(108, 117, 125, 0.1);
+    }
+    .animation-container {
+        position: relative;
+        height: 400px;
+        margin-bottom: 2rem;
+    }
+    .highlight-circle {
+        position: absolute;
+        border: 3px dashed;
+        border-radius: 50%;
+        opacity: 0;
+        z-index: 100;
+        transform: scale(0.5);
+        transition: all 0.5s ease-in-out;
+    }
+    .highlight-circle.visible {
+        opacity: 0.7;
+        transform: scale(1);
+    }
+    .highlight-circle-1 {
+        border-color: #28a745;
+        width: 100px;
+        height: 100px;
+        top: 50px;
+        right: 70px;
+    }
+    .highlight-circle-2 {
+        border-color: #007bff;
+        width: 90px;
+        height: 90px;
+        top: 70px;
+        right: 180px;
+    }
+    .highlight-circle-3 {
+        border-color: #dc3545;
+        width: 80px;
+        height: 80px;
+        bottom: 100px;
+        left: 150px;
+    }
+    .data-source {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-top: 2rem;
+    }
+    .data-source span {
+        font-weight: bold;
+    }
+    
+    /* Easter egg styles */
+    .easter-egg-ticker {
+        cursor: pointer;
+        position: relative;
+        display: inline-block;
+    }
+    
+    .easter-egg-ticker .click-counter {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background-color: #F44336;
+        color: white;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        font-size: 12px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .ticker-shake {
+        animation: ticker-shake 0.5s ease-in-out;
+    }
+    
+    @keyframes ticker-shake {
+        0% { transform: translateX(0); }
+        15% { transform: translateX(-5px) rotate(-3deg); }
+        30% { transform: translateX(4px) rotate(2deg); }
+        45% { transform: translateX(-4px) rotate(-2deg); }
+        60% { transform: translateX(2px) rotate(1deg); }
+        75% { transform: translateX(-2px) rotate(-1deg); }
+        100% { transform: translateX(0); }
+    }
+    
+    .stock-joke {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        z-index: 1000;
+        max-width: 80%;
+        display: none;
+        text-align: center;
+    }
+    
+    .stock-joke.show {
+        display: block;
+        animation: popup 0.5s ease forwards, fadeout 0.5s ease 4.5s forwards;
+    }
+    
+    @keyframes popup {
+        0% { transform: translate(-50%, 100px); opacity: 0; }
+        100% { transform: translate(-50%, 0); opacity: 1; }
+    }
+    
+    @keyframes fadeout {
+        0% { opacity: 1; }
+        100% { opacity: 0; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stock-bot-header py-5 text-white" style="background: linear-gradient(135deg, #2c3e50, #1abc9c);">
+    <div class="container">
+        <h1 class="display-4 text-center mb-3">Stock Trading Bot</h1>
+        <p class="lead text-center">A transformer-based AI trading system that leverages multiple data sources to predict stock movement</p>
+    </div>
+</div>
+
+<!-- Stock joke container -->
+<div id="stockJoke" class="stock-joke">
+    <p class="mb-1"><strong>Stock Humor:</strong> Why don't Wall Street traders ever get lost? They're always following the money!</p>
+    <small class="text-muted">Keep clicking a ticker for more jokes</small>
+</div>
+
+<section class="stock-bot-explanation py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="card-title h4">About This Project</h2>
+                        <p>This Stock Trading Bot utilizes transformer-based deep learning to analyze and predict market movements. It's trained on diverse data sources including:</p>
+                        <ul>
+                            <li>Historical pricing and volume data from 700+ stocks</li>
+                            <li>Insider trading information from government websites</li>
+                            <li>Historical congressional trading activity</li>
+                            <li>Social media sentiment and news article analysis</li>
+                            <li>Proprietary technical indicators and market signals</li>
+                        </ul>
+                        <p>The system provides confidence intervals for potential stock movements, focusing on a 1-week prediction horizon. It makes daily trades based on confidence levels, carefully adhering to SEC guidelines for trading frequency.</p>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h3 class="card-title h5">Performance Comparison</h3>
+                        <p>Before deploying with real capital, the algorithms were extensively tested with paper trading. Below is a year-long comparison of three different algorithm variants against the S&P 500 benchmark.</p>
+                        
+                        <div class="animation-container">
+                            <canvas id="performanceChart"></canvas>
+                            <div class="highlight-circle highlight-circle-1"></div>
+                            <div class="highlight-circle highlight-circle-2"></div>
+                            <div class="highlight-circle highlight-circle-3"></div>
+                        </div>
+                        
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h5 class="h6">Algorithm 1</h5>
+                                        <p class="text-success h4">+265%</p>
+                                        <p class="small">Transformer + Insider Data</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h5 class="h6">Algorithm 2</h5>
+                                        <p class="text-primary h4">+255%</p>
+                                        <p class="small">Transformer + Social Sentiment</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h5 class="h6">Algorithm 3</h5>
+                                        <p class="text-danger h4">+70%</p>
+                                        <p class="small">Technical Analysis Only</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h5 class="h6">S&P 500</h5>
+                                        <p class="text-secondary h4">+155%</p>
+                                        <p class="small">Market Benchmark</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p class="data-source mt-3">
+                            <span>Note:</span> Performance shown represents back-tested results from January to December 2023 using historical data. Past performance is not indicative of future results.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header" style="background-color: #2c3e50; color: white;">
+                        <h3 class="h5 mb-0">Current Stock Predictions</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>The following stocks have the highest confidence scores for potential upward movement in the next trading week:</p>
+                        
+                        <div class="row">
+                            {% for stock in confidence_data[:6] %}
+                            <div class="col-md-4 mb-3">
+                                <div class="card stock-card h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h5 class="card-title mb-0">
+                                                <span class="easter-egg-ticker" data-ticker="{{ stock.ticker }}">
+                                                    {{ stock.ticker }}
+                                                    <span class="click-counter">0</span>
+                                                </span>
+                                                <small class="text-muted">{{ stock.name }}</small>
+                                            </h5>
+                                            {% if stock.prediction == "up" %}
+                                            <span class="badge bg-success">↑</span>
+                                            {% else %}
+                                            <span class="badge bg-danger">↓</span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="mb-1">Confidence: {{ stock.confidence }}%</p>
+                                        <div class="confidence-bar">
+                                            <div class="confidence-bar-fill" style="width: {{ stock.confidence }}%; 
+                                                background-color: {% if stock.confidence > 80 %}#28a745{% elif stock.confidence > 65 %}#ffc107{% else %}#dc3545{% endif %}"></div>
+                                        </div>
+                                        <p class="mt-3 mb-1">Key factors:</p>
+                                        <div>
+                                            {% for factor in stock.factors %}
+                                            <span class="factor-tag 
+                                                {% if factor.impact == 'positive' %}bg-success text-white
+                                                {% elif factor.impact == 'negative' %}bg-danger text-white
+                                                {% else %}bg-info text-white{% endif %}">
+                                                {{ factor.name }}
+                                            </span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header" style="background-color: #2c3e50; color: white;">
+                        <h3 class="h5 mb-0">Technology Stack</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="h6">Model Architecture</h5>
+                                <ul>
+                                    <li>Transformer model with multi-head attention</li>
+                                    <li>1.2B parameters across specialized attention heads</li>
+                                    <li>PyTorch implementation with custom loss functions</li>
+                                    <li>Regularization techniques to prevent overfitting</li>
+                                    <li>Multiple prediction heads for price targets, volatility and trading volume</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5 class="h6">Data Pipeline</h5>
+                                <ul>
+                                    <li>AWS-based ETL processes for continuous data ingestion</li>
+                                    <li>Feature engineering for time-series financial data</li>
+                                    <li>Web scraping infrastructure for regulatory filings</li>
+                                    <li>NLP preprocessing for news and social sentiment</li>
+                                    <li>Robust data validation and cleaning processes</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Performance chart setup
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    
+    // Data for the chart (using the data from the Flask app)
+    const performanceData = {{ performance_data|tojson }};
+    
+    // Chart configuration
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: performanceData.dates,
+            datasets: [
+                {
+                    label: 'Algorithm 1 (Transformer + Insider)',
+                    data: performanceData.algorithm1,
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    borderWidth: 3,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.4
+                },
+                {
+                    label: 'Algorithm 2 (Transformer + Social)',
+                    data: performanceData.algorithm2,
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    borderWidth: 3,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.4
+                },
+                {
+                    label: 'Algorithm 3 (Technical Only)',
+                    data: performanceData.algorithm3,
+                    borderColor: '#dc3545',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                    borderWidth: 3,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.4
+                },
+                {
+                    label: 'S&P 500 Benchmark',
+                    data: performanceData.sp500,
+                    borderColor: '#6c757d',
+                    backgroundColor: 'rgba(108, 117, 125, 0.1)',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat('en-US', { 
+                                    style: 'percent', 
+                                    minimumFractionDigits: 1,
+                                    maximumFractionDigits: 1 
+                                }).format(context.parsed.y / 100);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Performance (%)'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Animation for highlighting the algorithms
+    setTimeout(function() {
+        document.querySelector('.highlight-circle-1').classList.add('visible');
+        
+        setTimeout(function() {
+            document.querySelector('.highlight-circle-2').classList.add('visible');
+            
+            setTimeout(function() {
+                document.querySelector('.highlight-circle-3').classList.add('visible');
+                
+                setTimeout(function() {
+                    document.querySelectorAll('.highlight-circle').forEach(circle => {
+                        circle.classList.remove('visible');
+                    });
+                }, 2500);
+            }, 1000);
+        }, 1000);
+    }, 2000);
+    
+    // Easter egg - Stock market jokes
+    const stockJokes = [
+        "I invested in a paper company once. It folded.",
+        "Why did the stock market crash? It couldn't find its keys.",
+        "What's a trader's favorite song? 'Buy, buy, buy' by *NSYNC.",
+        "I bought shares in a company that sells mirrors. I'm hoping for some serious returns.",
+        "My broker told me to have a diverse portfolio, so I bought stocks in different colors.",
+        "What do you call a Wall Street broker with 3 houses? A liar.",
+        "The stock market is like a roller coaster, except sometimes the safety bar fails.",
+        "My stockbroker's favorite movie? 'The Wolf of Wall Street.' Mine? 'Dumb and Dumber.'",
+        "I would tell you a joke about the stock market, but it's too volatile right now.",
+        "What's the difference between a market correction and a bear market? In a correction, you lose your neighbor's money. In a bear market, you lose your own."
+    ];
+    
+    const tickers = document.querySelectorAll('.easter-egg-ticker');
+    const jokeElement = document.getElementById('stockJoke');
+    
+    tickers.forEach(ticker => {
+        let clickCount = 0;
+        const counter = ticker.querySelector('.click-counter');
+        
+        ticker.addEventListener('click', function(e) {
+            e.preventDefault();
+            clickCount++;
+            
+            // Show counter
+            counter.style.display = 'flex';
+            counter.textContent = clickCount;
+            
+            // Add shake animation
+            ticker.classList.add('ticker-shake');
+            setTimeout(() => {
+                ticker.classList.remove('ticker-shake');
+            }, 500);
+            
+            // Show joke every 3 clicks
+            if (clickCount % 3 === 0) {
+                const randomJoke = stockJokes[Math.floor(Math.random() * stockJokes.length)];
+                const tickerSymbol = ticker.dataset.ticker;
+                
+                jokeElement.querySelector('p').innerHTML = `<strong>${tickerSymbol} Humor:</strong> ${randomJoke}`;
+                jokeElement.classList.add('show');
+                
+                setTimeout(() => {
+                    jokeElement.classList.remove('show');
+                }, 5000);
+            }
+            
+            // Reset after 30 clicks
+            if (clickCount >= 30) {
+                clickCount = 0;
+                counter.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

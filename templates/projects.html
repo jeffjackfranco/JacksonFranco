@@ -1,0 +1,124 @@
+{% extends "layout.html" %}
+
+{% block title %}Projects | Jackson Franco{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="display-4 mb-5 text-center">My Projects</h1>
+    
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        <!-- FAISS Vector Search Tool -->
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">FAISS Vector Search Tool</h5>
+                    <p class="card-text">
+                        A vector search tool that uses Facebook AI Similarity Search (FAISS) to find similar documents based on their vector embeddings.
+                        It demonstrates efficient similarity search capabilities essential for large-scale information retrieval.
+                    </p>
+                    <p><strong>Technologies used:</strong> Python, FAISS, Sentence Transformers, Flask, JavaScript</p>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <a href="/faiss-demo" class="btn btn-primary">Try the Demo</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Daily Quality Assurance Checks -->
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Daily Quality Assurance Checks</h5>
+                    <p class="card-text">
+                        An automated system that monitors key performance metrics across different regions, detects anomalies using regression analysis, and alerts managers when metrics fall below expected values.
+                    </p>
+                    <p><strong>Technologies used:</strong> Python, Pandas, NumPy, Scikit-learn, Django</p>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <a href="/qa-checks-demo" class="btn btn-primary">Try the Demo</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stock Trading Bot -->
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Stock Trading Bot</h5>
+                    <p class="card-text">
+                        A transformer-based AI system that predicts stock movements using historical pricing data, insider trading information, social sentiment, and technical indicators. Features confidence intervals and paper trading algorithms to validate performance.
+                    </p>
+                    <p><strong>Technologies used:</strong> Python, PyTorch, Transformers, Pandas, NumPy, Plotly</p>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <a href="/stock-bot-demo" class="btn btn-primary">Try the Demo</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Thesis: Mass Arguing Tool -->
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Thesis: Mass Arguing Tool</h5>
+                    <p class="card-text">
+                        A debate platform that collects arguments on controversial topics and uses semantic search to compare similar viewpoints. Features an AI debate system that synthesizes opposing perspectives to engage users in thoughtful dialogue.
+                    </p>
+                    <p><strong>Technologies used:</strong> Python, Flask, Sentence Transformers, LLMs, SQLite, Semantic Search</p>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <a href="/thesis-demo" class="btn btn-primary">Try the Demo</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Customer Segmentation Tool -->
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Customer Segmentation Tool</h5>
+                    <p class="card-text">
+                        A clustering-based tool that segments customers based on purchasing behavior, demographics, and engagement patterns. It helps businesses target specific customer groups with personalized marketing strategies.
+                    </p>
+                    <p><strong>Technologies used:</strong> Python, Scikit-learn, Pandas, Matplotlib, Seaborn</p>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <a href="#" class="btn btn-secondary disabled">Demo Coming Soon</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recommendation Engine -->
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Recommendation Engine</h5>
+                    <p class="card-text">
+                        A collaborative filtering recommendation system that suggests products based on user behavior and preferences. It employs matrix factorization techniques to identify latent features and make accurate recommendations.
+                    </p>
+                    <p><strong>Technologies used:</strong> Python, TensorFlow, Surprise, Flask, MongoDB</p>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <a href="#" class="btn btn-secondary disabled">Demo Coming Soon</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Time Series Forecasting Tool -->
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Time Series Forecasting Tool</h5>
+                    <p class="card-text">
+                        A time series analysis tool that forecasts future values based on historical data. It supports multiple forecasting methods including ARIMA, Prophet, and LSTM networks, with automatic model selection.
+                    </p>
+                    <p><strong>Technologies used:</strong> Python, Prophet, statsmodels, TensorFlow, Plotly</p>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <a href="#" class="btn btn-secondary disabled">Demo Coming Soon</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

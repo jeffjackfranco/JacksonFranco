@@ -1,0 +1,168 @@
+{% extends "layout.html" %}
+
+{% block title %}FAISS Document Search Demo | Jackson Franco{% endblock %}
+
+{% block content %}
+<div class="faiss-demo-header py-5 bg-primary text-white">
+    <div class="container">
+        <h1 class="display-4 text-center mb-3">FAISS Document Search Demo</h1>
+        <p class="lead text-center">Experience the power of semantic search using Facebook AI Similarity Search (FAISS)</p>
+    </div>
+</div>
+
+<section class="faiss-explanation py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="card-title h4">About This Project</h2>
+                        <p>This demo showcases a semantic search engine built with FAISS (Facebook AI Similarity Search) that finds relevant documents based on the meaning of your query, not just keyword matching.</p>
+                        <p>In a real-world implementation, this system can search through thousands of documents in milliseconds, making it ideal for knowledge bases, documentation search, and customer support systems.</p>
+                        <p>For this demo, try one of the sample queries to see how the system returns semantically relevant results.</p>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h3 class="card-title h5">How It Works</h3>
+                        <ol>
+                            <li>Documents are encoded into high-dimensional vectors using transformer models.</li>
+                            <li>FAISS indexes these vectors for efficient similarity search.</li>
+                            <li>When you enter a query, it's converted to the same vector space.</li>
+                            <li>The system finds documents with vectors closest to your query vector.</li>
+                            <li>Results are ranked by similarity score and returned to you.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="h5 mb-0">Try the Demo</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="search-form" class="mb-4">
+                            <div class="mb-3">
+                                <label for="query-select" class="form-label">Select a sample query:</label>
+                                <select class="form-select" id="query-select">
+                                    <option value="">-- Select a query --</option>
+                                    <option value="How do I update my benefits?">How do I update my benefits?</option>
+                                    <option value="What's the process for requesting time off?">What's the process for requesting time off?</option>
+                                    <option value="How do I reset my password?">How do I reset my password?</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="search-query" class="form-label">Query:</label>
+                                <input type="text" class="form-control" id="search-query" placeholder="Or type your own query..." readonly>
+                                <div class="form-text">For demo purposes, please use the dropdown selection.</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="search-button">Search</button>
+                        </form>
+                        
+                        <div id="results-container" class="d-none">
+                            <div class="d-flex justify-content-center mb-4 d-none" id="loading-indicator">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span class="ms-2">Searching documents...</span>
+                            </div>
+                            
+                            <h4>Search Results</h4>
+                            <div id="results-list" class="list-group">
+                                <!-- Results will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const querySelect = document.getElementById('query-select');
+    const searchQuery = document.getElementById('search-query');
+    const searchForm = document.getElementById('search-form');
+    const searchButton = document.getElementById('search-button');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const resultsContainer = document.getElementById('results-container');
+    const resultsList = document.getElementById('results-list');
+    
+    // Update input field when selection changes
+    querySelect.addEventListener('change', function() {
+        searchQuery.value = this.value;
+    });
+    
+    // Handle form submission
+    searchForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const query = searchQuery.value.trim();
+        if (!query) {
+            alert('Please select a query from the dropdown.');
+            return;
+        }
+        
+        // Clear previous results
+        resultsList.innerHTML = '';
+        
+        // Show loading indicator
+        loadingIndicator.classList.remove('d-none');
+        resultsContainer.classList.remove('d-none');
+        searchButton.disabled = true;
+        
+        // Make API request
+        fetch('/api/faiss-query', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ query: query })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Hide loading indicator
+            loadingIndicator.classList.add('d-none');
+            searchButton.disabled = false;
+            
+            // Display results
+            if (data.results && data.results.length > 0) {
+                data.results.forEach(result => {
+                    const resultItem = document.createElement('div');
+                    resultItem.className = 'list-group-item';
+                    
+                    const title = document.createElement('h5');
+                    title.className = 'mb-1';
+                    title.textContent = result.title;
+                    
+                    const content = document.createElement('p');
+                    content.className = 'mb-1';
+                    content.textContent = result.content;
+                    
+                    const similarity = document.createElement('div');
+                    similarity.className = 'badge bg-success';
+                    similarity.textContent = `Similarity: ${(result.similarity * 100).toFixed(1)}%`;
+                    
+                    resultItem.appendChild(title);
+                    resultItem.appendChild(content);
+                    resultItem.appendChild(similarity);
+                    
+                    resultsList.appendChild(resultItem);
+                });
+            } else {
+                resultsList.innerHTML = '<div class="alert alert-info">No results found.</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            loadingIndicator.classList.add('d-none');
+            searchButton.disabled = false;
+            resultsList.innerHTML = '<div class="alert alert-danger">An error occurred while processing your request.</div>';
+        });
+    });
+});
+</script>
+{% endblock %} 

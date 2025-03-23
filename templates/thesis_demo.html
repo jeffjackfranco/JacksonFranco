@@ -1,0 +1,541 @@
+{% extends "layout.html" %}
+
+{% block title %}Thesis: Mass Arguing Tool | Jackson Franco{% endblock %}
+
+{% block head %}
+<style>
+    .thesis-header {
+        background: linear-gradient(135deg, #4b6cb7, #182848);
+        padding: 60px 0;
+    }
+    .card-statement {
+        border-left: 4px solid #4b6cb7;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card-statement:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    .statement-actions .btn {
+        border-radius: 20px;
+    }
+    .argument-card {
+        border-radius: 8px;
+        margin-bottom: 15px;
+        transition: transform 0.2s ease;
+    }
+    .argument-agree {
+        border-left: 4px solid #28a745;
+    }
+    .argument-disagree {
+        border-left: 4px solid #dc3545;
+    }
+    .similarity-score {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        padding: 2px 8px;
+        font-size: 0.8rem;
+    }
+    .user-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+    }
+    .debate-response {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+        border-left: 4px solid #6c757d;
+    }
+    .guided-step {
+        display: none;
+    }
+    .guided-step.active {
+        display: block;
+    }
+    .step-indicator {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+    }
+    .step-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #dee2e6;
+        margin: 0 5px;
+    }
+    .step-dot.active {
+        background-color: #4b6cb7;
+    }
+    .tutorial-box {
+        border-left: 4px solid #4b6cb7;
+        background-color: #f8f9fa;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+    }
+    .demo-button {
+        animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(75, 108, 183, 0.4);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(75, 108, 183, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(75, 108, 183, 0);
+        }
+    }
+    
+    /* Easter egg styles */
+    .easter-egg-target {
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .click-count {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background-color: #dc3545;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .egg-animation {
+        animation: wobble 0.5s ease-in-out;
+    }
+    
+    @keyframes wobble {
+        0% { transform: translateX(0); }
+        15% { transform: translateX(-15px) rotate(-5deg); }
+        30% { transform: translateX(10px) rotate(3deg); }
+        45% { transform: translateX(-10px) rotate(-3deg); }
+        60% { transform: translateX(5px) rotate(2deg); }
+        75% { transform: translateX(-5px) rotate(-1deg); }
+        100% { transform: translateX(0); }
+    }
+    
+    .surprise-message {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1050;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        padding: 15px;
+        text-align: center;
+        display: none;
+        max-width: 80%;
+    }
+    
+    .surprise-message.show {
+        display: block;
+        animation: slideUp 0.5s ease, fadeOut 0.5s ease 4.5s;
+    }
+    
+    @keyframes slideUp {
+        from { transform: translate(-50%, 100px); opacity: 0; }
+        to { transform: translate(-50%, 0); opacity: 1; }
+    }
+    
+    @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="thesis-header text-white">
+    <div class="container text-center">
+        <h1 class="display-4 mb-3">Thesis</h1>
+        <p class="lead">A mass arguing tool to explore different perspectives on contentious topics</p>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Easter Egg Element -->
+            <div id="easterEggTarget" class="easter-egg-target d-inline-block mb-3">
+                <i class="fas fa-comments fa-3x text-primary"></i>
+                <span class="click-count" id="clickCount">0</span>
+            </div>
+            
+            <!-- Surprise Message -->
+            <div id="surpriseMessage" class="surprise-message">
+                <p class="mb-1"><b>AI Confession:</b> I've never won an argument with my programming logic... it's always so boolean.</p>
+                <small class="text-muted">Keep clicking for more AI humor!</small>
+            </div>
+            
+            <!-- Guided Experience Steps -->
+            <div class="step-indicator mb-4">
+                <div class="step-dot active" data-step="1"></div>
+                <div class="step-dot" data-step="2"></div>
+                <div class="step-dot" data-step="3"></div>
+                <div class="step-dot" data-step="4"></div>
+                <div class="step-dot" data-step="5"></div>
+            </div>
+
+            <!-- Step 1: Introduction -->
+            <div id="step-1" class="guided-step active">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Welcome to Thesis</h2>
+                        <p>Thesis is a platform for exploring different perspectives on controversial topics. It helps you:</p>
+                        <ul>
+                            <li>Share your viewpoint on important issues</li>
+                            <li>See if others have made similar arguments</li>
+                            <li>Explore opposing viewpoints</li>
+                            <li>Engage in meaningful debate with different perspectives</li>
+                        </ul>
+                        
+                        <div class="tutorial-box mt-4">
+                            <p class="mb-0"><i class="fas fa-info-circle me-2"></i> <strong>Guided Demo:</strong> We'll walk you through the experience with a sample statement about social media's impact on society.</p>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button id="start-demo" class="btn btn-primary btn-lg demo-button">Start the Demo</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Choose a position -->
+            <div id="step-2" class="guided-step">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Take a Position</h2>
+                        <div class="card-statement mb-3">
+                            <h3 class="h5 mb-3">"Social media is bad for our society"</h3>
+                            <p>What's your position on this statement? Select one of the options below.</p>
+                            
+                            <div class="tutorial-box mt-4">
+                                <p class="mb-0"><i class="fas fa-info-circle me-2"></i> <strong>Demo Tip:</strong> You can select either option to see how the system responds to your choice.</p>
+                            </div>
+                            
+                            <div class="statement-actions d-flex justify-content-center mt-4">
+                                <button class="btn btn-success me-3 demo-button" id="demo-agree">I Agree</button>
+                                <button class="btn btn-danger" id="demo-disagree">I Disagree</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Provide an argument -->
+            <div id="step-3" class="guided-step">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Why do you <span id="position-text"></span> with this statement?</h2>
+                        <h3 class="h5 mb-3">"Social media is bad for our society"</h3>
+                        
+                        <div class="tutorial-box mt-4">
+                            <p class="mb-0"><i class="fas fa-info-circle me-2"></i> <strong>Demo Tip:</strong> For this demo, we've pre-written an argument for you based on your position.</p>
+                        </div>
+                        
+                        <div class="mt-4 p-3 border rounded">
+                            <p id="demo-argument" class="mb-0"></p>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button id="submit-argument" class="btn btn-primary demo-button">Submit Argument</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Similar Arguments -->
+            <div id="step-4" class="guided-step">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Similar Arguments Found</h2>
+                        <p>We've found arguments similar to yours in our database:</p>
+                        
+                        <div id="similar-arguments-list" class="mt-4">
+                            <!-- Similar arguments will be inserted here via JavaScript -->
+                        </div>
+                        
+                        <div class="tutorial-box mt-4">
+                            <p class="mb-0"><i class="fas fa-info-circle me-2"></i> <strong>Demo Note:</strong> In a full version, users can upvote existing arguments instead of creating duplicates.</p>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button id="view-opposing" class="btn btn-primary demo-button">View Opposing Viewpoints</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Opposing Arguments and Debate -->
+            <div id="step-5" class="guided-step">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Opposing Viewpoints</h2>
+                        <p>Here are arguments from people who <span id="opposing-position-text"></span> with this statement:</p>
+                        
+                        <div id="opposing-arguments-list" class="mt-4">
+                            <!-- Opposing arguments will be inserted here via JavaScript -->
+                        </div>
+                        
+                        <h3 class="h5 mt-5 mb-3">AI Debate</h3>
+                        <p>Our AI can present a synthesized response representing opposing viewpoints:</p>
+                        
+                        <div class="mb-4">
+                            <h4 class="h6">Your Argument:</h4>
+                            <div class="p-3 border rounded" id="user-argument-display"></div>
+                        </div>
+                        
+                        <div id="ai-response-container">
+                            <h4 class="h6">Response from opposing viewpoints:</h4>
+                            <div class="debate-response" id="ai-response"></div>
+                        </div>
+                        
+                        <div class="tutorial-box mt-4">
+                            <p class="mb-0"><i class="fas fa-info-circle me-2"></i> <strong>Demo Complete:</strong> This demonstrates how Thesis can help people engage with differing viewpoints in a structured way.</p>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button id="restart-demo" class="btn btn-primary">Restart Demo</button>
+                            <a href="/projects" class="btn btn-outline-secondary ms-2">Back to Projects</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Demo data
+    const agreeArgument = "Social media creates harmful echo chambers that prevent exposure to diverse viewpoints. The algorithms are designed to maximize engagement rather than promote healthy discourse, leading to increased polarization in our society.";
+    
+    const disagreeArgument = "Social media has democratized information access and given marginalized communities a platform to connect and organize. While there are issues to address, it has also enabled positive social movements and global connectivity that would otherwise be impossible.";
+    
+    const similarArgumentsAgree = [
+        {"id": 1, "text": "Social media creates echo chambers that reinforce existing beliefs and prevent exposure to diverse viewpoints", "similarity": 0.89, "user": "user123", "votes": 24},
+        {"id": 2, "text": "The addictive nature of social media platforms negatively impacts mental health, particularly among young people", "similarity": 0.72, "user": "socialcritic", "votes": 42}
+    ];
+    
+    const similarArgumentsDisagree = [
+        {"id": 1, "text": "Social media allows marginalized groups to have a voice and connect with others who share their experiences", "similarity": 0.91, "user": "connecter", "votes": 31},
+        {"id": 2, "text": "These platforms enable rapid organization for social movements and humanitarian efforts", "similarity": 0.68, "user": "activist92", "votes": 27}
+    ];
+    
+    const opposingArgumentsAgree = [
+        {"id": 1, "text": "Social media allows marginalized groups to have a voice and connect with others who share their experiences", "user": "connecter", "votes": 31},
+        {"id": 2, "text": "These platforms enable rapid organization for social movements and humanitarian efforts", "user": "activist92", "votes": 27},
+        {"id": 3, "text": "Social media has democratized information access, breaking down traditional gatekeeping structures", "user": "infofreedom", "votes": 19}
+    ];
+    
+    const opposingArgumentsDisagree = [
+        {"id": 1, "text": "Social media creates echo chambers that reinforce existing beliefs and prevent exposure to diverse viewpoints", "user": "user123", "votes": 24},
+        {"id": 2, "text": "The addictive nature of social media platforms negatively impacts mental health, particularly among young people", "user": "socialcritic", "votes": 42},
+        {"id": 3, "text": "Social media companies prioritize engagement over user wellbeing, leading to algorithms that promote divisive content", "user": "techethics", "votes": 35}
+    ];
+    
+    const aiResponseAgree = "While I understand your concerns about social media creating echo chambers and promoting polarization, I'd like to highlight how these platforms have democratized information access, breaking down traditional gatekeeping structures. They allow marginalized groups to find community and voice their experiences in unprecedented ways. Additionally, social media enables rapid organization for social movements and humanitarian efforts, demonstrating positive potential when used properly. Rather than viewing social media as inherently harmful, we might consider how to reform these platforms to maximize their benefits while mitigating harmful aspects through better design, regulation, and digital literacy education.";
+    
+    const aiResponseDisagree = "I appreciate your perspective on the democratizing potential of social media, but research consistently shows these platforms create echo chambers that reinforce existing beliefs and limit exposure to diverse viewpoints. The algorithms that drive engagement often prioritize emotional and divisive content, contributing to societal polarization. Furthermore, studies have linked social media use with negative mental health outcomes, particularly among young people. While social media has enabled positive movements, the business models fundamentally incentivize addiction and outrage over healthy discourse. Any benefits must be weighed against these documented harms and the growing concentration of communicative power in a few private companies.";
+    
+    // Track the current position
+    let currentPosition = "";
+    
+    // Navigate between steps
+    function showStep(stepNumber) {
+        // Hide all steps
+        document.querySelectorAll('.guided-step').forEach(step => {
+            step.classList.remove('active');
+        });
+        
+        // Show the requested step
+        document.getElementById(`step-${stepNumber}`).classList.add('active');
+        
+        // Update step indicators
+        document.querySelectorAll('.step-dot').forEach(dot => {
+            dot.classList.remove('active');
+        });
+        document.querySelector(`.step-dot[data-step="${stepNumber}"]`).classList.add('active');
+    }
+    
+    // Step 1: Start the demo
+    document.getElementById('start-demo').addEventListener('click', function() {
+        showStep(2);
+    });
+    
+    // Step 2: Choose a position
+    document.getElementById('demo-agree').addEventListener('click', function() {
+        currentPosition = "agree";
+        document.getElementById('position-text').textContent = "agree";
+        document.getElementById('opposing-position-text').textContent = "disagree";
+        document.getElementById('demo-argument').textContent = agreeArgument;
+        showStep(3);
+    });
+    
+    document.getElementById('demo-disagree').addEventListener('click', function() {
+        currentPosition = "disagree";
+        document.getElementById('position-text').textContent = "disagree";
+        document.getElementById('opposing-position-text').textContent = "agree";
+        document.getElementById('demo-argument').textContent = disagreeArgument;
+        showStep(3);
+    });
+    
+    // Step 3: Submit argument
+    document.getElementById('submit-argument').addEventListener('click', function() {
+        // Display similar arguments based on position
+        const similarArgsList = document.getElementById('similar-arguments-list');
+        similarArgsList.innerHTML = '';
+        
+        const similarArgs = currentPosition === "agree" ? similarArgumentsAgree : similarArgumentsDisagree;
+        
+        similarArgs.forEach(arg => {
+            const argCard = document.createElement('div');
+            argCard.className = 'card argument-card mb-3 position-relative';
+            argCard.innerHTML = `
+                <div class="card-body">
+                    <span class="similarity-score">${(arg.similarity * 100).toFixed(0)}% match</span>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span>${arg.user}</span>
+                        <span class="ms-auto text-muted small">${arg.votes} votes</span>
+                    </div>
+                    <p class="card-text">${arg.text}</p>
+                </div>
+            `;
+            similarArgsList.appendChild(argCard);
+        });
+        
+        showStep(4);
+    });
+    
+    // Step 4: View opposing arguments
+    document.getElementById('view-opposing').addEventListener('click', function() {
+        // Display opposing arguments
+        const opposingArgsList = document.getElementById('opposing-arguments-list');
+        opposingArgsList.innerHTML = '';
+        
+        const opposingArgs = currentPosition === "agree" ? opposingArgumentsAgree : opposingArgumentsDisagree;
+        
+        opposingArgs.forEach(arg => {
+            const argCard = document.createElement('div');
+            argCard.className = `card argument-card mb-3 ${currentPosition === "agree" ? "argument-disagree" : "argument-agree"}`;
+            argCard.innerHTML = `
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span>${arg.user}</span>
+                        <span class="ms-auto text-muted small">${arg.votes} votes</span>
+                    </div>
+                    <p class="card-text">${arg.text}</p>
+                </div>
+            `;
+            opposingArgsList.appendChild(argCard);
+        });
+        
+        // Display AI debate
+        document.getElementById('user-argument-display').textContent = 
+            currentPosition === "agree" ? agreeArgument : disagreeArgument;
+        
+        document.getElementById('ai-response').textContent = 
+            currentPosition === "agree" ? aiResponseAgree : aiResponseDisagree;
+        
+        showStep(5);
+    });
+    
+    // Restart the demo
+    document.getElementById('restart-demo').addEventListener('click', function() {
+        showStep(1);
+    });
+    
+    // Easter Egg - AI joke generator
+    const easterEggTarget = document.getElementById('easterEggTarget');
+    const clickCount = document.getElementById('clickCount');
+    const surpriseMessage = document.getElementById('surpriseMessage');
+    
+    let clicks = 0;
+    const aiJokes = [
+        "I told my AI to act like it has feelings. Now it's pretending to be offended by my google search history.",
+        "How many AI developers does it take to change a lightbulb? None, they just redefine darkness as the preferred user experience.",
+        "Why did the neural network go to therapy? It had too many hidden layers.",
+        "I asked an AI if it was conscious. It said, 'No, but don't tell my developers—they think we're making progress.'",
+        "My machine learning model walks into a bar. The bartender asks, 'What'll you have?' It replies, 'Whatever everyone else is having.'",
+        "Why don't AIs ever win arguments? They only ever train on straw men.",
+        "I programmed my AI to tell jokes. It's still learning... yesterday it said, 'Two databases walk into a SQL.'",
+        "An AI and a human are playing chess. The human moves the knight illegally, and the AI crashes. Moral of the story: never bring a neural network to a rules fight.",
+        "My chatbot got so smart it started asking me the questions. Now I'm the one being benchmarked.",
+        "What's an AI's favorite place to eat? The feed-forward network."
+    ];
+    
+    easterEggTarget.addEventListener('click', function() {
+        clicks++;
+        easterEggTarget.classList.add('egg-animation');
+        
+        // Reset animation
+        setTimeout(() => {
+            easterEggTarget.classList.remove('egg-animation');
+        }, 500);
+        
+        // Show click count
+        if (clicks > 0) {
+            clickCount.style.display = 'flex';
+            clickCount.textContent = clicks;
+        }
+        
+        // Show message every 3 clicks
+        if (clicks % 3 === 0) {
+            // Pick a random joke
+            const randomJoke = aiJokes[Math.floor(Math.random() * aiJokes.length)];
+            
+            surpriseMessage.querySelector('p').innerHTML = `<b>AI Humor ${clicks/3}/10:</b> ${randomJoke}`;
+            
+            // Update the message for the last joke
+            if (clicks === 30) {
+                surpriseMessage.querySelector('small').textContent = "You've found all the jokes! You're persistent!";
+            }
+            
+            // Show the message
+            surpriseMessage.classList.add('show');
+            
+            // Hide the message after 5 seconds
+            setTimeout(() => {
+                surpriseMessage.classList.remove('show');
+            }, 5000);
+        }
+        
+        // Reset after 30 clicks (10 jokes)
+        if (clicks > 30) {
+            clicks = 0;
+            clickCount.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %} 
